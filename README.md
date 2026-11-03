@@ -35,20 +35,16 @@ The script packages the SwiftUI overlay and Python backend into
 `dist/macos/N-AI-macOS.dmg`. The generated app is unsigned; for distribution
 outside your own machine, sign and notarize it with an Apple Developer ID.
 
-## Build Windows executables with Docker
+## Build and download Windows executables with GitHub Actions
 
-With Docker Desktop running, build both the Windows app executable and guided
-installer from macOS or Linux:
+The Windows build runs on a native GitHub Actions Windows runner. Push changes
+to `main` that affect the app/build files, or start **Build Windows installer**
+manually from the repository's Actions tab. When the run completes, download
+the `N-AI-Windows-*` artifact from the run's **Artifacts** section. It contains
+the standalone app, guided installer, and setup instructions.
 
-```bash
-bash scripts/build_windows_docker.sh
-```
-
-The Docker image uses Wine to run Windows Python and PyInstaller, then NSIS to
-create the installer. It creates `dist/windows/N-AI.exe` and
-`dist/windows/N-AI-Setup.exe`. Double-click the setup executable to install
-N-AI. This cross-build is unsigned; test the executables on Windows and sign
-them before public distribution.
+The installer is unsigned; test the executables on Windows and sign them
+before public distribution.
 
 To build natively on Windows instead, use
 `powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1`.
