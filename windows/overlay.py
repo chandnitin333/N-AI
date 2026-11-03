@@ -11,10 +11,10 @@ class WindowsOverlay:
         self.ui_queue = ui_queue
         self.on_close_callback = on_close_callback
         self.on_save_api_key = on_save_api_key
-        self.is_transparent_mode = True
         self.settings_visible = needs_api_key
         self.current_assistant_start = None
         self.current_assistant_text = ""
+        self.opacity = tk.DoubleVar(value=85)
 
         # N-AI floating assistant layout
         root.geometry("480x620+100+100")
@@ -37,11 +37,32 @@ class WindowsOverlay:
         self.close_btn = tk.Button(self.title_bar, text="✕", font=("Segoe UI", 10), bg="#1A1C28", fg="#E53E3E", bd=0, cursor="hand2", command=self.close)
         self.close_btn.pack(side=tk.RIGHT, padx=5)
 
-        self.toggle_btn = tk.Button(self.title_bar, text="🌓", font=("Segoe UI", 10), bg="#1A1C28", fg="#A0AEC0", bd=0, cursor="hand2", command=self.toggle_transparency)
+        self.toggle_btn = tk.Button(self.title_bar, text="◐", font=("Segoe UI", 11), bg="#1A1C28", fg="#A0AEC0", bd=0, cursor="hand2", command=self.toggle_opacity_controls)
         self.toggle_btn.pack(side=tk.RIGHT, padx=5)
 
         self.settings_btn = tk.Button(self.title_bar, text="⚿", font=("Segoe UI", 11), bg="#1A1C28", fg="#A0AEC0", bd=0, cursor="hand2", command=self.toggle_settings)
         self.settings_btn.pack(side=tk.RIGHT, padx=5)
+
+        self.opacity_frame = tk.Frame(root, bg="#1A1C28", padx=13, pady=8)
+        tk.Label(self.opacity_frame, text="Overlay opacity", font=("Segoe UI", 9, "bold"), bg="#1A1C28", fg="#EDF2F7").pack(side=tk.LEFT)
+        self.opacity_value = tk.Label(self.opacity_frame, text="85%", font=("Segoe UI", 9), bg="#1A1C28", fg="#A0AEC0", width=5)
+        self.opacity_value.pack(side=tk.RIGHT)
+        self.opacity_scale = tk.Scale(
+            self.opacity_frame,
+            from_=35,
+            to=100,
+            orient=tk.HORIZONTAL,
+            showvalue=False,
+            variable=self.opacity,
+            bg="#1A1C28",
+            fg="#EDF2F7",
+            troughcolor="#0B0D14",
+            highlightthickness=0,
+            bd=0,
+            command=self.set_opacity,
+        )
+        self.opacity_scale.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=8)
+        self.opacity_visible = False
 
         self.settings_frame = tk.Frame(root, bg="#1A1C28", padx=13, pady=11)
         tk.Label(self.settings_frame, text="Connect your OpenAI account", font=("Segoe UI", 10, "bold"), bg="#1A1C28", fg="#EDF2F7").pack(anchor=tk.W)
@@ -103,15 +124,18 @@ class WindowsOverlay:
         y = self.root.winfo_y() + (event.y - self.drag_y)
         self.root.geometry(f"+{x}+{y}")
 
-    def toggle_transparency(self):
-        if self.is_transparent_mode:
-            self.root.attributes("-alpha", 1.0)
-            self.text_area.configure(bg="#05050A")
-            self.is_transparent_mode = False
+    def toggle_opacity_controls(self):
+        if self.opacity_visible:
+            self.opacity_frame.pack_forget()
+            self.opacity_visible = False
         else:
-            self.root.attributes("-alpha", 0.85)
-            self.text_area.configure(bg="#141522")
-            self.is_transparent_mode = True
+            self.opacity_frame.pack(fill=tk.X, padx=16, pady=(0, 8), after=self.title_bar)
+            self.opacity_visible = True
+
+    def set_opacity(self, value):
+        opacity = float(value)
+        self.root.attributes("-alpha", opacity / 100)
+        self.opacity_value.configure(text=f"{round(opacity)}%")
 
     def toggle_settings(self):
         if self.settings_visible:

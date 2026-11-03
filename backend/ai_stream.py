@@ -45,7 +45,13 @@ class AIStreamProcessor:
                 messages=[
                     {
                         "role": "system",
-                        "content": "Answer the user clearly and concisely. Start with the direct answer.",
+                        "content": (
+                            "Reply in the same language as the user's question: use English for "
+                            "English questions, and Hindi in Devanagari script for Hindi questions. "
+                            "Never respond in Urdu or use the Perso-Arabic script. If the user asks "
+                            "a question, answer it directly; do not merely repeat or translate it. "
+                            "Keep the answer clear and concise, and start with the direct answer."
+                        ),
                     },
                     {"role": "user", "content": clean_query},
                 ],

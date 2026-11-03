@@ -13,7 +13,7 @@ CALIBRATE_BLOCKS = 10        # 1 second background noise calibration windows
 SILENCE_BLOCKS = 5           # 0.5 seconds trailing silence threshold
 MIN_BLOCKS = 4               # Drop speech windows shorter than 0.4 seconds
 MAX_BLOCKS = 200             # Max structural sentence limits capped at 20 seconds
-IDLE_TEXT = "Sun raha hoon... bolo"
+IDLE_TEXT = "मैं सुन रहा हूँ... बोलिए"
 
 def _config_directory():
     if sys.platform == "win32":

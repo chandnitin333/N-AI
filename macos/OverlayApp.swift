@@ -83,16 +83,32 @@ struct ContentView: View {
                 }
                 Spacer()
                 Button {
-                    model.isTransparent.toggle()
+                    model.showOpacityControls.toggle()
                 } label: {
-                    Image(systemName: model.isTransparent ? "circle.lefthalf.filled" : "circle.fill")
+                    Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.75))
                         .frame(width: 32, height: 32)
                         .background(.white.opacity(0.07), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .help("Toggle overlay opacity")
+                .help("Adjust overlay opacity")
+                .popover(isPresented: $model.showOpacityControls, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Overlay opacity")
+                            Spacer()
+                            Text("\(Int(model.opacity * 100))%")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.system(size: 12, weight: .medium))
+                        Slider(value: $model.opacity, in: 0.35...1.0)
+                            .tint(.teal)
+                    }
+                    .padding(14)
+                    .frame(width: 230)
+                }
                 Button {
                     model.showSettings.toggle()
                 } label: {
@@ -198,7 +214,8 @@ struct ContentView: View {
                 }
             }
         }
-        .background(model.isTransparent ? Color(red: 0.055, green: 0.065, blue: 0.09).opacity(0.94) : Color.black)
+        .background(WindowOpacityController(opacity: model.opacity).frame(width: 0, height: 0))
+        .background(Color(red: 0.055, green: 0.065, blue: 0.09).opacity(0.94))
     }
 
     private var apiKeySetup: some View {
@@ -331,10 +348,39 @@ private final class PasteSafeSecureTextField: NSSecureTextField {
     }
 }
 
+private struct WindowOpacityController: NSViewRepresentable {
+    let opacity: Double
+
+    func makeNSView(context: Context) -> OpacityView {
+        let view = OpacityView()
+        view.opacity = opacity
+        return view
+    }
+
+    func updateNSView(_ view: OpacityView, context: Context) {
+        view.opacity = opacity
+        view.applyOpacity()
+    }
+
+    final class OpacityView: NSView {
+        var opacity = 0.9
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            applyOpacity()
+        }
+
+        func applyOpacity() {
+            window?.alphaValue = CGFloat(min(max(opacity, 0.35), 1.0))
+        }
+    }
+}
+
 private final class OverlayViewModel: ObservableObject {
-    @Published var statusText = "Sun raha hoon... bolo"
+    @Published var statusText = "मैं सुन रहा हूँ... बोलिए"
     @Published var messages: [ChatMessage] = []
-    @Published var isTransparent = true
+    @Published var opacity = 0.9
+    @Published var showOpacityControls = false
     @Published var apiKeyInput = ""
     @Published var needsAPIKey = false
     @Published var showSettings = false

@@ -19,8 +19,13 @@ def process_transcript(client, audio_blocks):
     wav_file = to_wav(audio_data)
 
     raw_transcript = client.audio.transcriptions.create(
-        model=TRANSCRIBE_MODEL, 
-        file=wav_file
+        model=TRANSCRIBE_MODEL,
+        file=wav_file,
+        prompt=(
+            "Transcribe the speech in the language that is spoken. Use English script for "
+            "English speech and Devanagari script for Hindi speech. Do not write Hindi speech "
+            "in Urdu or Perso-Arabic script."
+        ),
     ).text
 
     if not raw_transcript.strip():
