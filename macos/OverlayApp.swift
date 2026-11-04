@@ -48,14 +48,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.orderFrontRegardless()
         pythonBridge.start()
         CaptureManager.shared.startSystemAudioCapture(
-            onAudioFrame: { data, format in
-                PythonBridge.shared.sendSystemAudioFrame(data, format: format)
+            onAudioFrame: { data, format, sampleRate, channels in
+                PythonBridge.shared.sendSystemAudioFrame(
+                    data,
+                    format: format,
+                    sampleRate: sampleRate,
+                    channels: channels
+                )
             },
             onError: { message in
                 NotificationCenter.default.post(
                     name: NSNotification.Name("PythonUIEvent"),
                     object: nil,
                     userInfo: ["type": "error", "data": message]
+                )
+            },
+            onStatus: { message in
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PythonUIEvent"),
+                    object: nil,
+                    userInfo: ["type": "status", "data": message]
                 )
             }
         )

@@ -64,6 +64,10 @@ def main():
                 except json.JSONDecodeError:
                     ui_queue.put(("error", "Could not read the API-key setup request."))
                     continue
+                if not isinstance(command, dict):
+                    ui_queue.put(("error", "Received an invalid request from the macOS app."))
+                    continue
+
                 if command.get("type") == "set_api_key" and isinstance(command.get("data"), str):
                     configure_api_key(command["data"])
                 elif command.get("type") == "system_audio" and isinstance(command.get("data"), str):
@@ -71,9 +75,15 @@ def main():
                         listener.submit_audio_bytes(
                             base64.b64decode(command["data"], validate=True),
                             command.get("format"),
+                            command.get("sample_rate", 16000),
+                            command.get("channels", 1),
                         )
-                    except (binascii.Error, ValueError) as error:
-                        ui_queue.put(("error", "Could not decode system audio from macOS."))
+                    except (binascii.Error, TypeError, ValueError) as error:
+                        ui_queue.put(
+                            ("error", f"Could not decode system audio from macOS: {error}")
+                        )
+                else:
+                    ui_queue.put(("error", "Received an unsupported request from the macOS app."))
 
         threading.Thread(target=read_commands, daemon=True).start()
         try:

@@ -12,7 +12,8 @@ CHAT_MODEL = "gpt-4o-mini"
 SILENCE_BLOCKS = 5           # 0.5 seconds trailing silence threshold
 MIN_BLOCKS = 4               # Drop speech windows shorter than 0.4 seconds
 MAX_BLOCKS = 200             # Max structural sentence limits capped at 20 seconds
-LOOPBACK_THRESHOLD = 350     # Digital system audio has no microphone-room noise floor
+VAD_START_RMS = 18           # Fixed threshold avoids learning speech as the noise floor
+VAD_CONTINUE_RMS = 12        # Lower threshold prevents clipping quiet syllables
 IDLE_TEXT = "कंप्यूटर की आवाज़ सुन रहा हूँ..."
 
 def _config_directory():

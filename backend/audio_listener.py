@@ -7,11 +7,12 @@ import numpy as np
 from backend.config import (
     BLOCK,
     IDLE_TEXT,
-    LOOPBACK_THRESHOLD,
     MAX_BLOCKS,
     MIN_BLOCKS,
     SAMPLE_RATE,
     SILENCE_BLOCKS,
+    VAD_CONTINUE_RMS,
+    VAD_START_RMS,
 )
 
 
@@ -26,24 +27,58 @@ class AudioListener:
         self.pending_samples = np.empty(0, dtype=np.int16)
         self.pending_lock = threading.Lock()
 
-    def submit_audio_bytes(self, data, encoding):
+    def submit_audio_bytes(
+        self,
+        data,
+        encoding,
+        sample_rate=SAMPLE_RATE,
+        channels=1,
+    ):
+        try:
+            sample_rate = int(sample_rate)
+            channels = int(channels)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Invalid system-audio format metadata.") from error
+        if sample_rate <= 0 or channels <= 0:
+            raise ValueError("Invalid system-audio format metadata.")
+
         if encoding == "f32le":
             samples = np.frombuffer(data, dtype="<f4")
-            self.submit_float_audio(samples)
+            if samples.size % channels:
+                raise ValueError("Incomplete system-audio frame.")
+            if channels > 1:
+                samples = samples.reshape(-1, channels)
+            self.submit_float_audio(samples, sample_rate=sample_rate)
         elif encoding == "s16le":
-            self.submit_pcm16(data)
+            samples = np.frombuffer(data, dtype="<i2").astype(np.float32) / 32768.0
+            if samples.size % channels:
+                raise ValueError("Incomplete system-audio frame.")
+            if channels > 1:
+                samples = samples.reshape(-1, channels)
+            self.submit_float_audio(samples, sample_rate=sample_rate)
         else:
             raise ValueError("Unsupported system-audio sample format.")
 
     def submit_pcm16(self, data):
-        samples = np.frombuffer(data, dtype="<i2")
-        self._submit_samples(samples)
+        self.submit_audio_bytes(data, "s16le")
 
-    def submit_float_audio(self, data):
+    def submit_float_audio(self, data, sample_rate=SAMPLE_RATE):
         audio = np.asarray(data, dtype=np.float32)
         if audio.ndim == 2:
             audio = audio.mean(axis=1)
+        audio = np.nan_to_num(audio, nan=0.0, posinf=1.0, neginf=-1.0)
         samples = np.clip(audio, -1.0, 1.0)
+        if sample_rate != SAMPLE_RATE and samples.size:
+            output_count = max(1, round(samples.size * SAMPLE_RATE / sample_rate))
+            source_positions = np.arange(samples.size, dtype=np.float64)
+            target_positions = np.arange(output_count, dtype=np.float64) * (
+                sample_rate / SAMPLE_RATE
+            )
+            samples = np.interp(
+                target_positions,
+                source_positions,
+                samples,
+            ).astype(np.float32)
         self._submit_samples((samples * 32767).astype(np.int16))
 
     def _submit_samples(self, samples):
@@ -98,6 +133,7 @@ class AudioListener:
         speaking = False
         silence_counter = 0
         audio_buffer = []
+        has_received_audio = False
         self.ui_queue.put(("status", "Listening to computer audio..."))
 
         while self.running:
@@ -105,16 +141,25 @@ class AudioListener:
             if block is None:
                 continue
 
-            is_loud = np.max(np.abs(block.astype(np.int32))) > LOOPBACK_THRESHOLD
+            if not has_received_audio:
+                has_received_audio = True
+                self.ui_queue.put(
+                    ("status", "System audio received; monitoring for speech...")
+                )
+
+            samples = block.astype(np.float32)
+            rms = float(np.sqrt(np.mean(samples * samples)))
             if not speaking:
-                if is_loud:
+                if rms >= VAD_START_RMS:
                     speaking = True
                     silence_counter = 0
                     audio_buffer = [block]
                     self.ui_queue.put(("status", "Computer audio detected; listening..."))
             else:
                 audio_buffer.append(block)
-                silence_counter = 0 if is_loud else silence_counter + 1
+                silence_counter = (
+                    0 if rms >= VAD_CONTINUE_RMS else silence_counter + 1
+                )
 
                 if silence_counter >= SILENCE_BLOCKS or len(audio_buffer) >= MAX_BLOCKS:
                     speaking = False

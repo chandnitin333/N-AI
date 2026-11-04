@@ -26,6 +26,15 @@ The key is never included in the app or installer. On macOS, allow N-AI under
 **System Settings > Privacy & Security > Screen & System Audio Recording** when
 prompted. Windows captures the active default speaker's loopback audio.
 
+The status banner reports when capture starts, when system-audio frames arrive,
+when speech is detected, and when a segment is being checked for a question.
+If it stays on **waiting for audio frames**, check macOS Screen & System Audio
+Recording permission and restart N-AI. If it reports audio frames but never
+detects speech, make sure interview playback is audible through the active
+system output and raise the system volume. N-AI does not open the microphone;
+filtering is performed on the captured speaker-audio transcript, so it cannot
+identify speakers in a mixed audio source with certainty.
+
 ## Build a macOS installer
 
 Build natively on macOS with Xcode Command Line Tools, Python 3, and `hdiutil`

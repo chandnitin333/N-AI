@@ -81,10 +81,17 @@ public final class PythonBridge {
         writeCommand(["type": "set_api_key", "data": apiKey])
     }
 
-    public func sendSystemAudioFrame(_ frame: Data, format: String) {
+    public func sendSystemAudioFrame(
+        _ frame: Data,
+        format: String,
+        sampleRate: Int,
+        channels: Int
+    ) {
         writeCommand([
             "type": "system_audio",
             "format": format,
+            "sample_rate": String(sampleRate),
+            "channels": String(channels),
             "data": frame.base64EncodedString()
         ])
     }
