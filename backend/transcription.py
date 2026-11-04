@@ -22,9 +22,9 @@ def process_transcript(client, audio_blocks):
         model=TRANSCRIBE_MODEL,
         file=wav_file,
         prompt=(
-            "Transcribe the speech in the language that is spoken. Use English script for "
-            "English speech and Devanagari script for Hindi speech. Do not write Hindi speech "
-            "in Urdu or Perso-Arabic script."
+            "Transcribe audible computer-system audio faithfully for interview-question "
+            "detection. Use English script for English and Devanagari script for Hindi. "
+            "Do not use Urdu or Perso-Arabic script."
         ),
     ).text
 

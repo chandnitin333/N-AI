@@ -1,8 +1,11 @@
 # N-AI
 
-N-AI is a floating voice assistant for macOS and Windows. It listens to
-microphone audio, transcribes speech, and displays the transcript and response
-in a readable overlay. The app does not capture screen contents.
+N-AI is a floating interview assistant for macOS and Windows. It listens to
+computer speaker output (system-audio loopback), filters for interviewer
+questions, and displays those questions with AI-generated answers. It does not
+open the microphone or capture screen video. Audio is processed in memory and
+sent to OpenAI for transcription; the app does not save audio or transcripts to
+disk.
 
 ## Configure the API key
 
@@ -19,8 +22,9 @@ OPENAI_API_KEY=your_api_key
 ```
 
 You can also create the `.env` file manually with `OPENAI_API_KEY=your_api_key`.
-The key is never included in the app or installer. Grant microphone access
-when the operating system asks.
+The key is never included in the app or installer. On macOS, allow N-AI under
+**System Settings > Privacy & Security > Screen & System Audio Recording** when
+prompted. Windows captures the active default speaker's loopback audio.
 
 ## Build a macOS installer
 

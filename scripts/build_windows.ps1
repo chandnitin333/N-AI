@@ -29,7 +29,7 @@ New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
     --specpath $OutputDir `
     --paths $ProjectRoot `
     --hidden-import windows.overlay --hidden-import windows.capture_exclusion `
-    --collect-all sounddevice --collect-all _sounddevice_data `
+    --collect-all soundcard `
     (Join-Path $ProjectRoot "backend\main.py")
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed." }
 
@@ -37,7 +37,7 @@ if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed." }
 N-AI setup
 
 1. Run N-AI-Setup.exe and follow the installer.
-2. On first launch, Windows may ask for microphone access. Allow it.
+2. Keep the interview audio playing through your computer's default speakers.
 3. Click the key icon in N-AI, paste your OpenAI API key, then choose Save key.
    The key is stored locally in %APPDATA%\N-AI\.env.
 4. Restart N-AI after saving the key.

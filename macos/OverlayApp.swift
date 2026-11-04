@@ -47,9 +47,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         pythonBridge.start()
+        CaptureManager.shared.startSystemAudioCapture(
+            onAudioFrame: { data, format in
+                PythonBridge.shared.sendSystemAudioFrame(data, format: format)
+            },
+            onError: { message in
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PythonUIEvent"),
+                    object: nil,
+                    userInfo: ["type": "error", "data": message]
+                )
+            }
+        )
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        CaptureManager.shared.stopSystemAudioCapture()
         pythonBridge.stop()
     }
 
@@ -160,13 +173,13 @@ struct ContentView: View {
                     LazyVStack(alignment: .leading, spacing: 14) {
                         if model.messages.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
-                                Image(systemName: "mic.circle")
+                                Image(systemName: "speaker.wave.2.circle")
                                     .font(.system(size: 30))
                                     .foregroundStyle(Color.teal)
                                 Text("Ready when you are")
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundStyle(.white)
-                                Text("Speak naturally. Your transcript and AI response will appear here.")
+                                Text("Interviewer questions from computer audio and AI answers appear here. Microphone audio is not captured.")
                                     .font(.system(size: 13))
                                     .foregroundStyle(.white.opacity(0.55))
                                     .fixedSize(horizontal: false, vertical: true)

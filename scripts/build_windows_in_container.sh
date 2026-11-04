@@ -17,15 +17,14 @@ xvfb-run -a wine Z:\\opt\\python311\\python.exe -m PyInstaller \
     --paths Z:\\workspace \
     --hidden-import windows.overlay \
     --hidden-import windows.capture_exclusion \
-    --collect-all sounddevice \
-    --collect-all _sounddevice_data \
+    --collect-all soundcard \
     Z:\\workspace\\backend\\main.py
 
 cat > dist/windows/SETUP.txt <<'SETUP'
 N-AI setup
 
 1. Double-click N-AI-Setup.exe and follow the installer prompts.
-2. Allow microphone access if Windows asks.
+2. Keep the interview audio playing through your computer's default speakers.
 3. Click the key icon in N-AI, paste your OpenAI API key, then choose Save key.
    The key is stored locally in %APPDATA%\N-AI\.env.
 4. Restart N-AI after saving the key.

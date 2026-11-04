@@ -105,7 +105,7 @@ class WindowsOverlay:
         if not needs_api_key:
             self.text_area.configure(state=tk.NORMAL)
             self.text_area.insert(tk.END, "Ready when you are\n", "assistant_label")
-            self.text_area.insert(tk.END, "Speak naturally. Your transcript and AI response will appear here.", "message")
+            self.text_area.insert(tk.END, "Interviewer questions from computer audio and AI answers appear here. Microphone audio is not captured.", "message")
             self.text_area.configure(state=tk.DISABLED)
 
         # Enforce Hardware Window Capture Exclusion Rules

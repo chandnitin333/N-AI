@@ -54,7 +54,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>1.0.0</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
-    <key>NSMicrophoneUsageDescription</key><string>N-AI uses your microphone to transcribe your speech and provide responses.</string>
+    <key>NSScreenCaptureUsageDescription</key><string>N-AI captures computer audio to identify interviewer questions. It does not record video or microphone input.</string>
 </dict>
 </plist>
 PLIST
@@ -64,7 +64,7 @@ N-AI setup
 
 1. Open N-AI-macOS.dmg, then double-click N-AI-Installer.pkg.
 2. Follow the Installer prompts to install N-AI into Applications.
-3. Open N-AI. Allow microphone access when macOS asks.
+3. Open N-AI and allow system-audio capture when macOS asks.
 4. Click the key icon in N-AI, paste your OpenAI API key, then choose Save key.
    The key is stored locally in:
    ~/Library/Application Support/N-AI/.env

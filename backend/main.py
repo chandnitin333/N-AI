@@ -2,6 +2,8 @@ import json
 import os
 import sys
 import queue
+import base64
+import binascii
 import threading
 from openai import OpenAI
 
@@ -64,6 +66,14 @@ def main():
                     continue
                 if command.get("type") == "set_api_key" and isinstance(command.get("data"), str):
                     configure_api_key(command["data"])
+                elif command.get("type") == "system_audio" and isinstance(command.get("data"), str):
+                    try:
+                        listener.submit_audio_bytes(
+                            base64.b64decode(command["data"], validate=True),
+                            command.get("format"),
+                        )
+                    except (binascii.Error, ValueError) as error:
+                        ui_queue.put(("error", "Could not decode system audio from macOS."))
 
         threading.Thread(target=read_commands, daemon=True).start()
         try:

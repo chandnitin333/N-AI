@@ -8,6 +8,7 @@ public final class PythonBridge {
     private let outputPipe = Pipe()
     private let inputPipe = Pipe()
     private let bufferLock = NSLock()
+    private let inputLock = NSLock()
     private var outputBuffer = Data()
     private var hasReceivedStatus = false
     private var started = false
@@ -77,22 +78,33 @@ public final class PythonBridge {
     }
 
     public func setAPIKey(_ apiKey: String) {
+        writeCommand(["type": "set_api_key", "data": apiKey])
+    }
+
+    public func sendSystemAudioFrame(_ frame: Data, format: String) {
+        writeCommand([
+            "type": "system_audio",
+            "format": format,
+            "data": frame.base64EncodedString()
+        ])
+    }
+
+    private func writeCommand(_ command: [String: String]) {
         guard process.isRunning else {
             emitEvent(type: "error", data: "The N-AI backend is not running.")
             return
         }
 
         do {
-            let command = try JSONSerialization.data(
-                withJSONObject: ["type": "set_api_key", "data": apiKey]
-            )
-            var payload = command
+            var payload = try JSONSerialization.data(withJSONObject: command)
             payload.append(0x0A)
+            inputLock.lock()
+            defer { inputLock.unlock() }
             try inputPipe.fileHandleForWriting.write(contentsOf: payload)
         } catch {
             emitEvent(
                 type: "error",
-                data: "Could not send API-key setup to the backend: \(error.localizedDescription)"
+                data: "Could not send a command to the backend: \(error.localizedDescription)"
             )
         }
     }
