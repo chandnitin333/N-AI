@@ -2,6 +2,7 @@ import json
 import queue
 import threading
 import unittest
+import wave
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -9,7 +10,8 @@ import numpy as np
 
 from backend.ai_stream import AIStreamProcessor
 from backend.audio_listener import AudioListener
-from backend.config import BLOCK
+from backend.config import BLOCK, TRANSCRIBE_MODEL
+from backend.transcription import process_transcript
 
 
 class FakeCompletions:
@@ -38,6 +40,20 @@ class FakeCompletions:
         )
 
 
+class FakeTranscriptions:
+    def __init__(self):
+        self.model = None
+        self.wav_samples = None
+
+    def create(self, **kwargs):
+        self.model = kwargs["model"]
+        wav_file = kwargs["file"]
+        wav_file.seek(0)
+        with wave.open(wav_file, "rb") as wav:
+            self.wav_samples = np.frombuffer(wav.readframes(wav.getnframes()), dtype="<i2")
+        return SimpleNamespace(text="Tell me about your experience.")
+
+
 class AudioPipelineTests(unittest.TestCase):
     def test_quiet_system_audio_is_detected_without_startup_calibration(self):
         ui_queue = queue.Queue()
@@ -50,7 +66,7 @@ class AudioPipelineTests(unittest.TestCase):
         quiet_voice = (30 * np.sin(2 * np.pi * 440 * sample_indexes / 16_000)).astype(
             np.int16
         )
-        silence = np.zeros(BLOCK * 5, dtype=np.int16)
+        silence = np.zeros(BLOCK * 8, dtype=np.int16)
         listener.submit_pcm16(np.concatenate((quiet_voice, silence)).tobytes())
 
         try:
@@ -59,10 +75,48 @@ class AudioPipelineTests(unittest.TestCase):
             listener.stop()
             listener_thread.join(timeout=2)
 
-        self.assertEqual(len(captured), 9)
+        self.assertEqual(len(captured), 12)
         statuses = [value for kind, value in list(ui_queue.queue) if kind == "status"]
         self.assertIn("Computer audio detected; listening...", statuses)
         self.assertIn("Checking for an interviewer question...", statuses)
+
+    def test_pre_roll_preserves_quiet_initial_word(self):
+        listener = AudioListener(queue.Queue(), queue.Queue())
+        listener_thread = threading.Thread(target=listener._process_audio)
+        listener_thread.start()
+
+        initial_word = np.full(BLOCK * 3, 10, dtype=np.int16)
+        voice = np.full(BLOCK * 4, 30, dtype=np.int16)
+        silence = np.zeros(BLOCK * 8, dtype=np.int16)
+        listener.submit_pcm16(np.concatenate((initial_word, voice, silence)).tobytes())
+
+        try:
+            captured = listener.task_queue.get(timeout=2)
+        finally:
+            listener.stop()
+            listener_thread.join(timeout=2)
+
+        self.assertEqual(len(captured), 15)
+        self.assertTrue(np.all(captured[0] == 9))
+
+    def test_transcription_uses_higher_accuracy_model_and_normalizes_quiet_audio(self):
+        transcriptions = FakeTranscriptions()
+        client = SimpleNamespace(
+            audio=SimpleNamespace(transcriptions=transcriptions)
+        )
+        quiet_blocks = [
+            np.full((BLOCK, 1), 1000, dtype=np.int16),
+            np.full((BLOCK, 1), 1000, dtype=np.int16),
+        ]
+
+        transcript = process_transcript(client, quiet_blocks)
+
+        self.assertEqual(transcript, "Tell me about your experience.")
+        self.assertEqual(transcriptions.model, TRANSCRIBE_MODEL)
+        self.assertGreater(
+            int(np.max(np.abs(transcriptions.wav_samples))),
+            2500,
+        )
 
     def test_resamples_and_downmixes_screen_capture_audio(self):
         listener = AudioListener(queue.Queue(), queue.Queue())

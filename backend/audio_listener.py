@@ -1,6 +1,7 @@
 import queue
 import sys
 import threading
+from collections import deque
 
 import numpy as np
 
@@ -9,6 +10,7 @@ from backend.config import (
     IDLE_TEXT,
     MAX_BLOCKS,
     MIN_BLOCKS,
+    PRE_ROLL_BLOCKS,
     SAMPLE_RATE,
     SILENCE_BLOCKS,
     VAD_CONTINUE_RMS,
@@ -133,6 +135,7 @@ class AudioListener:
         speaking = False
         silence_counter = 0
         audio_buffer = []
+        pre_roll = deque(maxlen=PRE_ROLL_BLOCKS)
         has_received_audio = False
         self.ui_queue.put(("status", "Listening to computer audio..."))
 
@@ -153,8 +156,11 @@ class AudioListener:
                 if rms >= VAD_START_RMS:
                     speaking = True
                     silence_counter = 0
-                    audio_buffer = [block]
+                    audio_buffer = [*pre_roll, block]
+                    pre_roll.clear()
                     self.ui_queue.put(("status", "Computer audio detected; listening..."))
+                else:
+                    pre_roll.append(block)
             else:
                 audio_buffer.append(block)
                 silence_counter = (

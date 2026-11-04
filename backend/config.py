@@ -6,12 +6,13 @@ from pathlib import Path
 
 SAMPLE_RATE = 16000
 BLOCK = 1600                 # 0.1 second block slice
-TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
+TRANSCRIBE_MODEL = "gpt-4o-transcribe"
 CHAT_MODEL = "gpt-4o-mini"
 
-SILENCE_BLOCKS = 5           # 0.5 seconds trailing silence threshold
-MIN_BLOCKS = 4               # Drop speech windows shorter than 0.4 seconds
-MAX_BLOCKS = 200             # Max structural sentence limits capped at 20 seconds
+PRE_ROLL_BLOCKS = 3          # Preserve 0.3 seconds before speech detection
+SILENCE_BLOCKS = 8           # Allow natural pauses before ending a question
+MIN_BLOCKS = 5               # Drop speech windows shorter than 0.5 seconds
+MAX_BLOCKS = 300             # Cap a continuous capture segment at 30 seconds
 VAD_START_RMS = 18           # Fixed threshold avoids learning speech as the noise floor
 VAD_CONTINUE_RMS = 12        # Lower threshold prevents clipping quiet syllables
 IDLE_TEXT = "कंप्यूटर की आवाज़ सुन रहा हूँ..."

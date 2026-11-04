@@ -16,15 +16,27 @@ def to_wav(audio_data):
 
 def process_transcript(client, audio_blocks):
     audio_data = np.concatenate(audio_blocks)
+    if audio_data.size == 0:
+        return None
+
+    audio_float = audio_data.astype(np.float32) / 32768.0
+    rms = float(np.sqrt(np.mean(audio_float * audio_float)))
+    peak = float(np.max(np.abs(audio_float)))
+    if rms > 0 and rms < 0.08:
+        gain = min(0.08 / rms, 8.0, 0.9 / peak if peak > 0 else 8.0)
+        audio_data = np.clip(audio_float * gain, -1.0, 1.0)
+        audio_data = (audio_data * 32767).astype(np.int16)
+
     wav_file = to_wav(audio_data)
 
     raw_transcript = client.audio.transcriptions.create(
         model=TRANSCRIBE_MODEL,
         file=wav_file,
         prompt=(
-            "Transcribe audible computer-system audio faithfully for interview-question "
-            "detection. Use English script for English and Devanagari script for Hindi. "
-            "Do not use Urdu or Perso-Arabic script."
+            "Transcribe the audio verbatim. It is computer audio from an interview. "
+            "Include every audible word and do not summarize, complete, or infer missing "
+            "words. Preserve the speaker's language: use English spelling for English and "
+            "Devanagari for Hindi. Do not use Urdu or Perso-Arabic script."
         ),
     ).text
 

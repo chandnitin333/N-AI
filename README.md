@@ -28,6 +28,8 @@ prompted. Windows captures the active default speaker's loopback audio.
 
 The status banner reports when capture starts, when system-audio frames arrive,
 when speech is detected, and when a segment is being checked for a question.
+N-AI keeps a short audio pre-roll to preserve the start of words, waits longer
+through natural pauses, and uses the higher-accuracy transcription model.
 If it stays on **waiting for audio frames**, check macOS Screen & System Audio
 Recording permission and restart N-AI. If it reports audio frames but never
 detects speech, make sure interview playback is audible through the active
