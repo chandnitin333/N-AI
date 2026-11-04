@@ -6,8 +6,8 @@ import numpy as np
 
 from backend.config import (
     BLOCK,
-    CALIBRATE_BLOCKS,
     IDLE_TEXT,
+    LOOPBACK_THRESHOLD,
     MAX_BLOCKS,
     MIN_BLOCKS,
     SAMPLE_RATE,
@@ -95,14 +95,6 @@ class AudioListener:
                 self.audio_queue.put(None)
 
     def _process_audio(self):
-        calibration_levels = []
-        for _ in range(CALIBRATE_BLOCKS):
-            block = self._next_audio_block()
-            if block is None:
-                return
-            calibration_levels.append(np.max(np.abs(block)))
-
-        threshold = max(float(np.mean(calibration_levels)) * 2.5, 400)
         speaking = False
         silence_counter = 0
         audio_buffer = []
@@ -113,12 +105,13 @@ class AudioListener:
             if block is None:
                 continue
 
-            is_loud = np.max(np.abs(block)) > threshold
+            is_loud = np.max(np.abs(block.astype(np.int32))) > LOOPBACK_THRESHOLD
             if not speaking:
                 if is_loud:
                     speaking = True
                     silence_counter = 0
                     audio_buffer = [block]
+                    self.ui_queue.put(("status", "Computer audio detected; listening..."))
             else:
                 audio_buffer.append(block)
                 silence_counter = 0 if is_loud else silence_counter + 1
@@ -127,8 +120,10 @@ class AudioListener:
                     speaking = False
                     if len(audio_buffer) >= MIN_BLOCKS:
                         self.task_queue.put(audio_buffer.copy())
+                        self.ui_queue.put(("status", "Checking for an interviewer question..."))
+                    else:
+                        self.ui_queue.put(("status", IDLE_TEXT))
                     audio_buffer.clear()
-                    self.ui_queue.put(("status", IDLE_TEXT))
 
     def _next_audio_block(self, timeout=None):
         try:

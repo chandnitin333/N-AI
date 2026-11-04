@@ -9,10 +9,10 @@ BLOCK = 1600                 # 0.1 second block slice
 TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
 CHAT_MODEL = "gpt-4o-mini"
 
-CALIBRATE_BLOCKS = 10        # 1 second background noise calibration windows
 SILENCE_BLOCKS = 5           # 0.5 seconds trailing silence threshold
 MIN_BLOCKS = 4               # Drop speech windows shorter than 0.4 seconds
 MAX_BLOCKS = 200             # Max structural sentence limits capped at 20 seconds
+LOOPBACK_THRESHOLD = 350     # Digital system audio has no microphone-room noise floor
 IDLE_TEXT = "कंप्यूटर की आवाज़ सुन रहा हूँ..."
 
 def _config_directory():

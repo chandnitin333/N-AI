@@ -35,7 +35,9 @@ class AIStreamProcessor:
 
             clean_query = process_transcript(client, audio_blocks)
             if not clean_query:
+                self.ui_queue.put(("status", "Listening to computer audio..."))
                 return
+            self.ui_queue.put(("status", "Checking for an interviewer question..."))
 
             response = client.chat.completions.create(
                 model=CHAT_MODEL,
@@ -75,6 +77,7 @@ class AIStreamProcessor:
 
                     if mode is None:
                         if response_buffer.startswith("IGNORE"):
+                            self.ui_queue.put(("status", "Listening to computer audio..."))
                             return
                         question_marker = "QUESTION\n"
                         if response_buffer.startswith(question_marker):
@@ -106,5 +109,7 @@ class AIStreamProcessor:
             if mode != "answer" or not answer_started:
                 raise ValueError("The AI did not return a complete interview answer.")
             self.ui_queue.put(("assistant_end", ""))
+            self.ui_queue.put(("status", "Listening to computer audio..."))
         except Exception as e:
             self.ui_queue.put(("error", str(e)))
+            self.ui_queue.put(("status", "Listening to computer audio..."))
